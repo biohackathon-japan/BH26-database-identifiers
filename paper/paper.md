@@ -24,7 +24,7 @@ authors:
 affiliations:
   - name: EMBL-EBI
     index: 1
-  - name: DBCLS
+  - name: BioData Science Initiative (BSI), NIG
     index: 2
   - name: National Center for Biotechnology Information, USA
     index: 3
