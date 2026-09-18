@@ -16,6 +16,7 @@ authors:
     orcid: 0000-0001-8978-3344
     affiliation: 2
   - name: Takatomo Fujisawa
+    orcid: 0000-0001-8978-3344
     affiliation: 2
   - name: Evan Bolton
     orcid: 0000-0002-5959-6190
