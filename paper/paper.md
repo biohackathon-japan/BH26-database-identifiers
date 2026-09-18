@@ -35,7 +35,7 @@ biohackathon_url:   "https://2026.biohackathon.org/"
 biohackathon_location: "Matsuyama, Japan, 2026"
 group: database-identifiers
 git_url: https://github.com/biohackathon-japan/BH26-database-identifiers
-authors_short: First Author \emph{et al.}
+authors_short: Subramoniam \emph{et al.}
 ---
 
 # Abstract
@@ -347,7 +347,7 @@ data-quality issue with the underlying accessions themselves, and it means any s
 ("most citations happen in Methods") should be read as a claim about the ~63% of links that *did*
 align, not the full set.
 
-**Agreement with Europe PMC is bimodal** Per-document, 64.0% of documents
+**Agreement with Europe PMC is bimodal.**  64.0% of documents
 that either system found anything in show 90-100% agreement, but 16.4% show 0-10% agreement (Results
 §7), there is very little middle ground. We have not yet broken this down by database or by
 document to see whether the low-agreement group is concentrated in specific namespaces (which would
@@ -373,6 +373,4 @@ at EMBL-EBI for their support. We also thank the other participants and organise
 
 # References
 
-```{=latex}
-\AtEndDocument{%
-```
+
