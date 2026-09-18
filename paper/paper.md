@@ -10,9 +10,12 @@ tags:
   - TogoID
 authors:
   - name: Vijay Venkatesh Subramoniam
+    orcid: 0009-0000-1394-2513
     affiliation: 1
   - name: Yasunori Yamamoto
     orcid: 0000-0001-8978-3344
+    affiliation: 2
+  - name: Takatomo Fujisawa
     affiliation: 2
 
 affiliations:
