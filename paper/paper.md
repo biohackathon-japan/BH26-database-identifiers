@@ -17,12 +17,16 @@ authors:
     affiliation: 2
   - name: Takatomo Fujisawa
     affiliation: 2
-
+  - name: Evan Bolton
+    orcid: 0000-0002-5959-6190
+    affiliation: 3
 affiliations:
-  - name: European Molecular Bioinformatics Laboratory (EMBL-EBI)
+  - name: EMBL-EBI
     index: 1
   - name: DBCLS
     index: 2
+  - name: National Center for Biotechnology Information, USA
+    index: 3
 date: 18 September 2026
 cito-bibliography: paper.bib
 event: BH26JP
@@ -116,7 +120,7 @@ Upstream inputs feeding this pipeline:
 **Pipeline stages.** The pipeline proceeds through five stages.
 
 **Stage 1 (extraction)** parses each JATS document with a
-shared full-text parser and applies the TogoID-derived regex patterns (word-boundary anchored,
+shared full-text parser and applies the TogoID-derived regex patterns [@Ikeda2022TogoID] (word-boundary anchored,
 digit-floor gated) to passage text, producing per-shard tables of raw accession mentions with their
 database, surface form, and text offset. No GPU is required, and each shard is processed
 idempotently.
@@ -128,7 +132,7 @@ ID and offset) for downstream counting.
 **Stage 3 (existence verification, T2 then T3)** checks each candidate against source-of-truth
 registries in two tiers. T2 checks the TogoID label graph and rdf-config-native URIs against RDF
 Portal via SPARQL. T3 then confirms or refutes against two authoritative source APIs, routed by
-accession shape: NCBI E-utilities (authoritative for RefSeq/GEO) and EBI Search. Each candidate ends this stage as
+accession shape: NCBI E-utilities [@Sayers2010EUtilities]  (authoritative for RefSeq/GEO) and EBI Search [@Pearce2025EBISearch]. Each candidate ends this stage as
 `confirmed`, `pending`, or `absent`.
 
 **Stage 4 (metrics)** joins confirmed entries with their mentions and classifies each into one of five
@@ -371,10 +375,4 @@ at EMBL-EBI for their support. We also thank the other participants and organise
 
 ```{=latex}
 \AtEndDocument{%
-```
-
-# Appendices
-
-```{=latex}
-}
 ```
