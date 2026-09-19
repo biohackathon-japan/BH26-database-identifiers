@@ -41,9 +41,12 @@ authors_short: Subramoniam \emph{et al.}
 
 # Abstract
 
-Funders and data producers need to know not just which databases are cited in the literature, but
-whether a cited accession actually exists and how it was used. We report on a pipeline, built during
-the DBCLS BioHackathon 2026, that extracts database identifiers from PMC full text, verifies each one
+Funders and data producers need to know not just which databases are cited in the literature,
+but whether a cited accession actually exists and how it was used. Making that reuse visible
+is itself an incentive for the wider research community to deposit data, by giving concrete,
+attributable evidence that public deposits are genuinely reused and contribute to science.
+We report on a pipeline, built during the DBCLS BioHackathon 2026,
+that extracts database identifiers from PMC full text, verifies each one
 against source-of-truth APIs (TogoID/RDF Portal, NCBI E-utilities, EBI Search), and classifies
 confirmed accessions into one of five credit/provenance classes. On a working slice of 10,896 PMC
 documents, the pipeline confirms 19,786 (paper, accession) links across 1,352 papers and 18,159
@@ -64,7 +67,15 @@ left as future work.
 
 Data producers and funding agencies increasingly need to know how deposited datasets are actually
 reused in the published literature, and to know it at the level of individual database entries
-(accessions), not merely which databases are cited. This project builds an open, reproducible,
+(accessions), not merely which databases are cited.
+Beyond those stakeholders, this visibility speaks to the research community as a whole.
+A persistent barrier to data sharing is that what happens to a dataset after deposition
+is hard for depositors to trace, and hard to get credit for, which weakens the incentive to deposit at all.
+By making entry-level reuse concrete, verifiable, and attributable, that is, showing that a
+specific deposited accession was later reused and contributed to published science,
+the same infrastructure that lets funders track reuse also gives researchers a tangible reason
+to deposit in the first place. Demonstrating that public deposition pays off in downstream science is,
+in itself, one of the strongest ways to encourage more of it. This project builds an open, reproducible,
 regularly updated pipeline that extracts references to data entities from the full text of PMC Open
 Access articles (~8 million article versions), verifies that each referenced identifier really
 exists, and normalizes references at the entry level. The hackathon goal is create this pipeline,
@@ -92,6 +103,7 @@ What is still missing across existing efforts is a combination of:
 
 (4) a distinction between reference *roles* -- data used, generated, or merely mentioned (now implemented; Results §8)
 
+Together, these make reuse not just measurable but attributable — the property that turns a reuse metric into a deposition incentive.
 Identifiers.org is central to points (1)-(2): its registry (prefixes, patterns) and resolver define
 the canonical namespaces that make entry-level identity possible. Our existence-verification layer
 already relies on Identifiers.org-style URIs.
