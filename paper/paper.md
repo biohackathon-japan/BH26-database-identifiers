@@ -52,8 +52,12 @@ independent comparison against Europe PMC's own accession annotations over the s
 agreement at the individual-citation level, with a bimodal split at the per-document level: 64% of
 documents that either system found anything in agree at 90-100%, while 16% agree at only 0-10%, a
 pattern that needs manual citation and analysis. The pipeline, its Europe PMC comparison, and a static, backend-free
-dashboard reporting the results are complete and reproducible for this slice. Doing manual curation for this small corpus, 
-Extending coverage,  running against the full corpus, and adding reference-role (created/used/mentioned) classification are
+dashboard reporting the results are complete and reproducible for this slice.
+<!-- Doing manual curation for this small corpus, -->
+<!-- Extending coverage,  running against the full corpus, and adding reference-role (created/used/mentioned) classification are left as future work. -->
+A reference-role (generated/used/mentioned) classifier and a 221-item human gold standard
+evaluating it were also completed, reaching 0.80 macro-F1 with a near-zero
+generated-vs-used confusion; extending coverage and running against the full corpus are
 left as future work.
 
 # Introduction
@@ -82,13 +86,11 @@ What is still missing across existing efforts is a combination of:
 
 (1) a fully reproducible, openly specified extraction method
 
-(2) entry-level normalization across databases (cross-referencing an
-accession to a single canonical identity
+(2) entry-level normalization across databases (cross-referencing an accession to a single canonical identity)
 
-(3) coverage of databases beyond the common deposition
-archives (model-organism, ortholog, and other reference resources) 
+(3) coverage of databases beyond the common deposition archives (model-organism, ortholog, and other reference resources) 
 
-(4) a distinction between reference *roles* -- data used, generated, or merely mentioned.
+(4) a distinction between reference *roles* -- data used, generated, or merely mentioned (now implemented; Results §8)
 
 Identifiers.org is central to points (1)-(2): its registry (prefixes, patterns) and resolver define
 the canonical namespaces that make entry-level identity possible. Our existence-verification layer
@@ -240,6 +242,38 @@ collaborators.
 
 ![Data Reuse Dashboard: database usage drill-down \label{dashboardFigure}](./dashboard.png){ width=420px }
 
+## Reference-role classification
+Credit/provenance *class* (Table \ref{creditClassTable}) is a property of the *database* a
+confirmed accession belongs to. It does not say how a given paper *used* that accession. We
+therefore add an orthogonal, per-(paper, accession) axis — the reference **role** — distinguishing
+whether the citing paper **generated** the data (produced and deposited it), **used** it (reused a
+pre-existing dataset or reference resource as input), or merely **mentioned** it (named it as an
+entity, example, search hit, or tool/DB description). A `used` reference is further sub-tagged
+`ref_resource` when the thing used is a reference resource (e.g. aligning to a RefSeq/reference
+genome, querying UniProt) rather than reuse of a deposited dataset, so the two can be counted
+separately.
+
+**Two-stage classifier.** For each confirmed link we build a context window around the marked
+accession occurrence by re-parsing the source JATS with the same full-text parser used in Stage 1,
+which reproduces byte-identical offsets so spans stay aligned. A rule pre-pass then routes by
+credit class: `out_of_scope` is skipped; `deposited_research_record`/`deposited_entity_registry`
+are sent in full to a language model (the rules contribute only an advisory prior); and
+`derived_curated`/`curated_entity_registry` are decided by high-precision lexical rules
+(domain/family registries and un-cued mentions → `mentioned`; explicit reference-resource cues,
+e.g. "aligned to … genome", "as the query" → `used`), with ambiguous cases escalated to the model.
+The model stage runs a locally served open-weight instruction model (Qwen3.6-27B, FP8) under vLLM,
+data-parallel on 2×L40S GPUs, in non-thinking mode with schema-constrained ("guided") JSON output;
+an Azure OpenAI backend is supported as a drop-in fallback. Each link receives a role, a short
+evidence span quoted from the window, and a confidence. On the role-classification slice this
+routes 41,341 links to rules and 12,135 to the model (missing/parse-error rate 0.4%).
+
+**Gold-standard construction.** To evaluate the role axis we built a human gold standard of 221
+(paper, accession) links, sampled from the confirmed set by stratified sampling over
+(rule/model source × credit class × predicted role), with a minimum floor per stratum and a cap on
+the dominant `mentioned` stratum so the credit-critical `generated`/`used` cells are adequately
+populated. Labelling was **blind to the model output**: the annotator saw only the accession, its
+context window, database, and section, and assigned one of `generated`, `used`, `mentioned`, or
+`unsure` (plus the `ref_resource` sub-tag), following the same definitions the classifier is given.
 
 # Results
 
@@ -323,6 +357,60 @@ split is a real, currently unexplained pattern in the data, not an accuracy clai
 the likely candidates (different namespace coverage between the two systems, differing normalization,
 or alignment/offset mismatches) have not yet been investigated per-document.
 
+## 8. Reference-role classification: gold-standard evaluation
+
+This evaluation is over the project's role-classification slice (the feasibility subset,
+~17.5k papers, 53,476 role-assigned confirmed links), not the 10,896-document verification run of
+§1–7; the two slices are being aligned. Of the 221 gold items, 18 labelled `unsure` are excluded,
+leaving **203** scored links.
+
+Overall agreement between model and gold is **76.8%** (156/203), macro-F1 **0.80**. The
+credit-critical distinction is strong: **generated↔used confusions number 1**, and `generated`
+reaches F1 0.91. The entire error budget is one direction — `used` under-called as `mentioned`
+(Table \ref{roleConfusion}).
+
+Table: Role confusion matrix, model vs. gold (rows = gold, columns = model prediction). \label{roleConfusion}
+
+| gold \ model  | generated | used | mentioned | total |
+| ------------- | --------- | ---- | --------- | ----- |
+| **generated** | 30        | 0    | 5         | 35    |
+| **used**      | 1         | 63   | 37        | 101   |
+| **mentioned** | 0         | 4    | 63        | 67    |
+| **total**     | 31        | 67   | 105       | 203   |
+
+Table: Per-role precision/recall/F1. \label{rolePRF}
+
+| Role      | Precision | Recall | F1   | Support |
+| --------- | --------- | ------ | ---- | ------- |
+| generated | 0.97      | 0.86   | 0.91 | 35      |
+| used      | 0.94      | 0.62   | 0.75 | 101     |
+| mentioned | 0.60      | 0.94   | 0.73 | 67      |
+| macro     | —         | —      | 0.80 | 203     |
+
+**The error is concentrated and diagnosable.** Split by source, the model stage is far stronger
+than the rule pre-pass (83.5%, 96/115 vs. 68.2%, 60/88). By credit class the `deposited_research_record` class — the one that matters for a data-reuse metric — scores **94%**,
+while `derived_curated` scores 68% and drives the average down. The mechanism is specific: of the
+101 gold `used` links, 75 are reference-resource uses (`ref_resource`), and the rule pre-pass
+defaults reference-resource uses it cannot cue to `mentioned`; 19 of the 37 `used`→`mentioned`
+errors sit exactly in that rule path. Model confidence is well-calibrated for triage: links the
+model reports at confidence 1.0 are 95% correct, versus 70% at 0.9–0.99, so a confidence gate that
+routes sub-1.0 links to review isolates most errors.
+
+**Improvement identified.** Because the missed `used` links are overwhelmingly the rule pre-pass
+defaulting reference-resource uses to `mentioned`, routing the `derived_curated` "default-mentioned"
+cases to the model instead (rather than finalizing them by rule) is projected to raise overall
+accuracy to ~82% (recovering ~12 of the 19 targeted `used` misses at the cost of ~10% of newly-seen
+true-`mentioned` links). This is a projection from the model's observed per-label accuracy on
+`derived_curated`, not a re-measured run, and it trades cost (it pushes the large `derived_curated`
+`mentioned` volume onto the model); a measured re-run is left as an immediate next step.
+
+Two caveats bound these numbers. The gold is drawn from the older-paper feasibility subset, and
+per-class supports are modest (`curated_entity_registry` n≈28), so per-class figures are directional
+and the reliable headline is the deposit-class result and the near-zero generated↔used confusion.
+And the evaluation scores the classifier as configured at sampling time; the routing change above
+requires re-running the model on the affected links before its effect is measured rather than
+projected.
+
 # Discussion
 
 Several limitations are worth surfacing explicitly rather than folding into aggregate numbers.
@@ -361,10 +449,14 @@ none of the figures above should be extrapolated to the full PMC OA corpus witho
 pipeline over a larger or differently-sampled slice first.
 
 **Task status.** The dashboard (Results §1-6) and the Europe PMC comparison (Results §7) are both
-complete and reproducible for this run. Extending coverage to additional databases, benchmarking
-against the Identifiers.org resolver directly, and any role-level (created/used/mentioned)
-classification remain future work -- we are not reporting results for them here because we do not yet
-have pipeline output to check them against.
+complete and reproducible for this run.
+<!-- Extending coverage to additional databases, benchmarking against the Identifiers.org resolver directly, -->
+<!-- and any role-level (created/used/mentioned) classification remain future work -- we are not reporting results for them here because we do not yet have pipeline output to check them against. -->
+Reference-role (generated/used/mentioned) classification is now implemented and evaluated
+against a human gold standard (Methods; Results §8) on the role-classification slice;
+aligning it to the same document slice as §1–7 and a measured re-run of the routing
+improvement are the immediate next steps. Benchmarking against the Identifiers.org resolver
+directly and extending database coverage remain future work.
 
 ## Acknowledgements
 
