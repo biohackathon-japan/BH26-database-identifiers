@@ -56,8 +56,6 @@ agreement at the individual-citation level, with a bimodal split at the per-docu
 documents that either system found anything in agree at 90-100%, while 16% agree at only 0-10%, a
 pattern that needs manual citation and analysis. The pipeline, its Europe PMC comparison, and a static, backend-free
 dashboard reporting the results are complete and reproducible for this slice.
-<!-- Doing manual curation for this small corpus, -->
-<!-- Extending coverage,  running against the full corpus, and adding reference-role (created/used/mentioned) classification are left as future work. -->
 A reference-role (generated/used/mentioned) classifier and a 221-item human gold standard
 evaluating it were also completed, reaching 0.80 macro-F1 with a near-zero
 generated-vs-used confusion; extending coverage and running against the full corpus are
